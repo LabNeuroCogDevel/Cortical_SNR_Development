@@ -16,7 +16,7 @@ Beatriz Luna
 September 2023
 
 ### Current Project Status
-Manuscript in preparation
+Manuscript under review at Progress in Neurobiology
 
 ### Datasets
 LNCD 7T
