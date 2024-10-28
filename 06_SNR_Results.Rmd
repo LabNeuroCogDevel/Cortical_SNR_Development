@@ -13,7 +13,7 @@ output:
 
 
 ```{r load-libraries, message=FALSE, echo = FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning=FALSE, dev ='pdf', dpi=150, fig.height=4, fig.width = 6, fig.path='/Volumes/Hera/Projects/7TBrainMech/scripts/eeg/Shane/Cortical_SNR_Development/results/rStudio_figs/')
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, dev ='pdf', dpi=150, fig.height=4, fig.width = 6, fig.path='/Volumes/Hera/Projects/7TBrainMech/scripts/eeg/Shane/Cortical_SNR_Development/results/rStudioFigsResubmit/')
 ```
 
 ```{r, echo= FALSE, message = FALSE, warning = FALSE}
@@ -61,7 +61,12 @@ tag_facet <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, 
 # SNR across freqs 
 ```{r SNRacrossFreqs, echo= FALSE, message = FALSE, warning = FALSE, fig.height=10, fig.width=15}
 
-SNRallChans_outlier <- read.csv('/Volumes/Hera/Projects/7TBrainMech/scripts/eeg/Shane/Cortical_SNR_Development/results/allSubjectsSNR_allChans_allfreqs.csv')
+merge7t <- read.csv('/Volumes/Hera/Projects/7TBrainMech/scripts/txt/merged_7t.csv')
+sexInfo <- merge7t[c("lunaid","visitno","sex")]
+names(sexInfo)[names(sexInfo) == "lunaid"] <- "lunaID"
+
+
+SNRallChans_outlier <- read.csv('/Volumes/Hera/Projects/7TBrainMech/scripts/eeg/Shane/Cortical_SNR_Development/results/allSubjectsSNR_allChans_allfreqs.csv') %>% merge(., sexInfo, by = c("lunaID", "visitno"))
 
 # pivot to long format
 SNRallChans_outlier_long <- pivot_longer(SNRallChans_outlier, cols = c("Total","Evoked", "SNR", "Induced"), names_to = 'measure', values_to = 'value')
@@ -164,8 +169,24 @@ lunaize(ggplot(allmeasuresChanLocs %>% filter(measure == "SNR"), aes(x = -Y, y =
 
 allSNRmeasures <- read.csv('/Volumes/Hera/Projects/7TBrainMech/scripts/eeg/Shane/Cortical_SNR_Development/results/SNRmeasures_PCAvalues.csv')
 allSNRmeasures$Stim <- "40 Hz"
+allSNRmeasures$lunaID[allSNRmeasures$lunaID == "11748"] <- "11515"
+allSNRmeasures$lunaID[allSNRmeasures$lunaID == "11665"] <- "11390"
+allSNRmeasures <- merge(allSNRmeasures, sexInfo, by = c("lunaID", "visitno"), all = T)
+
+
+allSNRmeasures$sex[allSNRmeasures$lunaID == "11653" & is.na(allSNRmeasures$sex)] <- "F"
+allSNRmeasures$sex[allSNRmeasures$lunaID == "11690" & is.na(allSNRmeasures$sex)] <- "F"
+allSNRmeasures$sex[allSNRmeasures$lunaID == "11812" & is.na(allSNRmeasures$sex)] <- "F"
+
+
+
+allSNRmeasures$sex[allSNRmeasures$lunaID == "11515" & is.na(allSNRmeasures$sex)] <- "F"
+allSNRmeasures$sexFac <- factor(allSNRmeasures$sex, levels = c("M", "F"), ordered = T)
+
+
 #allSNRmeasures$inverseAge <- 1/(allSNRmeasures$age)
 
+#SNR 
 lunaize(ggplot(data = allSNRmeasures %>% filter(measure == "SNR"), aes(x = age, y = pc1)) +
           geom_point(size = 5,alpha=.8, color = "#2E041F") +
             geom_line(aes(group= interaction(lunaID)), alpha = 0.1) + 
@@ -176,10 +197,14 @@ lunaize(ggplot(data = allSNRmeasures %>% filter(measure == "SNR"), aes(x = age, 
         axis.title.y = element_text(vjust = 2), 
         axis.title.x = element_text(vjust = -2)) 
  
-gam.model <-  mgcv::gamm(pc1 ~ s(age, k = 3), data = allSNRmeasures %>% filter(measure == "SNR"), random=list(lunaID=~1))
+gam.model <-  mgcv::gamm(pc1 ~ s(age, k = 3) + sexFac, data = allSNRmeasures %>% filter(measure == "SNR"), random=list(lunaID=~1))
+summary(gam.model$gam)
+
+# sex interactions
+gam.model <-  mgcv::gamm(pc1 ~ s(age, by = sexFac) + sexFac, data = allSNRmeasures %>% filter(measure == "SNR"), random=list(lunaID=~1))
 summary(gam.model$gam)
  
- 
+#evoked
 lunaize(ggplot(data = allSNRmeasures %>% filter(measure == "Evoked"), aes(x = age, y = pc1)) +
           geom_point(size =5,alpha=.8, color = "#E3B23C") +
             geom_line(aes(group= interaction(lunaID)), alpha = 0.1) + 
@@ -189,23 +214,40 @@ lunaize(ggplot(data = allSNRmeasures %>% filter(measure == "Evoked"), aes(x = ag
         axis.title.y = element_text(vjust = 2), 
         axis.title.x = element_text(vjust = -2)) 
 
-  gam.model <-  mgcv::gamm(pc1 ~ s(age, k = 3), data = allSNRmeasures %>% filter(measure == "Evoked"), random=list(lunaID=~1))
+gam.model <-  mgcv::gamm(pc1 ~ s(age, k = 3) + sexFac, data = allSNRmeasures %>% filter(measure == "Evoked"), random=list(lunaID=~1))
+summary(gam.model$gam)
+
+# sex interactions
+gam.model <-  mgcv::gamm(pc1 ~ s(age, by = sexFac) + sexFac, data = allSNRmeasures %>% filter(measure == "Evoked"), random=list(lunaID=~1))
 summary(gam.model$gam)
 
 
+#induced
 lunaize(ggplot(data = allSNRmeasures %>% filter(measure == "Induced"), aes(x = age, y = pc1)) +
           geom_point(size =5,alpha=.8, color = "plum4") +
             geom_line(aes(group= interaction(lunaID)), alpha = 0.1) + 
-            geom_smooth(method=mgcv::"gam", formula = y ~ s(x, k = 3, fx = T), alpha=0.4, size=2, color = "plum4")) + 
+            geom_smooth(method=mgcv::"gam", formula = y ~ s(x, k = 3, fx = T), alpha=0.4, size=2, color="plum4")) + 
   xlab("Age") + ylab("Spontaneous PC1") +
   geom_text(aes(y = -3, x = 35.5, label = "***"), size = 15, color="plum4") + 
    theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
         axis.title.y = element_text(vjust = 2), 
         axis.title.x = element_text(vjust = -2)) 
   
-gam.model <-  mgcv::gamm(pc1 ~ s(age, k = 3), data = allSNRmeasures %>% filter(measure == "Induced"), random=list(lunaID=~1))
+gam.model <-  mgcv::gamm(pc1 ~ s(age, k = 3) + sexFac, data = allSNRmeasures %>% filter(measure == "Induced"), random=list(lunaID=~1))
 summary(gam.model$gam)
 
+# sex interactions
+gam.model <-  mgcv::gamm(pc1 ~ s(age, by = sexFac) + sexFac, data = allSNRmeasures %>% filter(measure == "Induced"), random=list(lunaID=~1))
+summary(gam.model$gam)
+
+lunaize(ggplot(data = allSNRmeasures %>% filter(measure == "Induced"), aes(x = age, y = pc1)) +
+          geom_point(size =5,alpha=.8, color = "plum4") +
+            geom_line(aes(group= interaction(lunaID)), alpha = 0.1) + 
+            geom_smooth(aes(group=sex, color = sex),method=mgcv::"gam", formula = y ~ s(x, k = 3, fx = T), alpha=0.4, size=2)) + 
+  xlab("Age") + ylab("Spontaneous PC1") +
+   theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
+        axis.title.y = element_text(vjust = 2), 
+        axis.title.x = element_text(vjust = -2)) 
 
 ```
 
@@ -221,14 +263,34 @@ allmeasures_mrs <- merge(allSNRmeasures, MRS, by = c("lunaID", "visitno", "age")
 allmeasures_mrs$inverseAge <- 1/allmeasures_mrs$age
 ```
 
-### L Glu
-```{r lGlu , echo= FALSE, message = FALSE, warning = FALSE, fig.height=10, fig.width=10}
+### Glu
+```{r Glu , echo= FALSE, message = FALSE, warning = FALSE, fig.height=10, fig.width=10}
+
+#SNR 
+
+lunaize(ggplot(data = allmeasures_mrs %>% filter(measure == 'SNR'), aes(x = Glu, y = pc1)) +
+            geom_point(size = 3,alpha=1, color = "#2E041F") +
+          geom_line(aes(group= interaction(lunaID, region), color = "#2E041F"), alpha = 0.3, size = 2) +
+          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=3)) + 
+  xlab("Glutamate") + ylab("SNR PC1") + 
+         scale_color_manual(values=c("#2E041F")) +
+   theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
+        axis.title.y = element_text(vjust = 2), 
+        axis.title.x = element_text(vjust = -2), legend.position = "none") 
+
+lm.model <-  lmer(Glu ~ age + pc1 + sexFac + region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
+summary(lm.model)
+
+#age interaction
+lm.model <-  lmer(Glu ~ age *pc1 + region + sexFac + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
+summary(lm.model)
 
 
+#spontaneous
  lunaize(ggplot(data = allmeasures_mrs %>% filter(measure == 'Induced'), aes(x = Glu, y = pc1)) +
-            geom_point(size = 2,alpha=0.8, color = "plum4") +
-          geom_line(aes(group= interaction(lunaID, region), color = "plum4"), alpha = 0.2) +
-          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=2)) + 
+           geom_point(size = 3,alpha=1, color = "plum4") +
+          geom_line(aes(group= interaction(lunaID, region), color = "plum4"), alpha = 0.3, size = 2) +
+          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=3)) + 
   xlab("Glutamate") + ylab("Spontaneous PC1") + 
          scale_color_manual(values=c("plum4")) +
    theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
@@ -236,28 +298,74 @@ allmeasures_mrs$inverseAge <- 1/allmeasures_mrs$age
         axis.title.x = element_text(vjust = -2), legend.position = "none") +
     geom_text(aes(y = -1, x = 2.4, label = "*"), size = 15, color="plum4") 
 
- 
- 
 
-lm.model <-  lmer(Glu ~ age + pc1 + region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
+lm.model <-  lmer(Glu ~ age + pc1 + region + sexFac + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
 summary(lm.model)
 
 #age interaction
-lm.model <-  lmer(Glu ~ age *pc1 +region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
+lm.model <-  lmer(Glu ~ age *pc1 + region + sexFac + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
 summary(lm.model)
 
 
 ```
 
-### L Imbalance
-```{r lImbalance, echo= FALSE, message = FALSE, warning = FALSE, fig.height=10, fig.width=18}
+### GABA
+```{r GABA , echo= FALSE, message = FALSE, warning = FALSE, fig.height=10, fig.width=10}
+
+#SNR 
+
+lunaize(ggplot(data = allmeasures_mrs %>% filter(measure == 'SNR'), aes(x = GABA, y = pc1)) +
+            geom_point(size = 2,alpha=0.8, color = "#2E041F") +
+          geom_line(aes(group= interaction(lunaID, region), color = "#2E041F"), alpha = 0.2) +
+          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=2)) + 
+  xlab("GABA") + ylab("SNR PC1") + 
+         scale_color_manual(values=c("#2E041F")) +
+   theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
+        axis.title.y = element_text(vjust = 2), 
+        axis.title.x = element_text(vjust = -2), legend.position = "none") 
+
+lm.model <-  lmer(GABA ~ age + pc1 + sexFac + region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
+summary(lm.model)
+
+#age interaction
+lm.model <-  lmer(GABA ~ age *pc1 +region + sexFac + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
+summary(lm.model)
+
+
+
+#spontaneous
+ lunaize(ggplot(data = allmeasures_mrs %>% filter(measure == 'Induced'), aes(x = GABA, y = pc1)) +
+            geom_point(size = 2,alpha=0.8, color = "plum4") +
+          geom_line(aes(group= interaction(lunaID, region), color = "plum4"), alpha = 0.2) +
+          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=2)) + 
+  xlab("GABA") + ylab("Spontaneous PC1") + 
+         scale_color_manual(values=c("plum4")) +
+   theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
+        axis.title.y = element_text(vjust = 2), 
+        axis.title.x = element_text(vjust = -2), legend.position = "none") 
+
+ 
+lm.model <-  lmer(GABA ~ age + pc1 + sexFac + region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
+summary(lm.model)
+
+#age interaction
+lm.model <-  lmer(GABA ~ age *pc1 +region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
+summary(lm.model)
+
+
+```
+
+
+
+### Imbalance
+```{r Imbalance, echo= FALSE, message = FALSE, warning = FALSE, fig.height=10, fig.width=18}
 
 # SNR pc1
 
  lunaize(ggplot(data = allmeasures_mrs %>% filter(measure == 'SNR'), aes(x = sqrt(GluGABAimbalanceABS), y = pc1)) +
-            geom_point(size = 2,alpha=0.8, color = "#2E041F") +
-          geom_line(aes(group= interaction(lunaID, region), color = "#2E041F"), alpha = 0.2) +
-          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=2)) + 
+            geom_point(size = 3,alpha=1, color = "#2E041F") +
+          geom_line(aes(group= interaction(lunaID, region), color = "#2E041F"), alpha = 0.3, size = 2) +
+          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=3)) + 
   xlab("Glu GABA Asymmetry") + ylab("SNR PC1") + 
          scale_color_manual(values=c("#2E041F")) +
    theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
@@ -266,12 +374,81 @@ summary(lm.model)
   geom_text(aes(x = 0.98, y = -1.3, label = "*"), size = 15, color="black") 
 
 
-lm.model <-  lmer(sqrt(GluGABAimbalanceABS) ~ age + pc1 + region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
+lm.model <-  lmer(sqrt(GluGABAimbalanceABS) ~ age + pc1 + sexFac + region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
 summary(lm.model)
   
 #age interaction
-lm.model <-  lmer(pc1 ~ age*sqrt(GluGABAimbalanceABS) + region+ (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
+lm.model <-  lmer(pc1 ~ age*sqrt(GluGABAimbalanceABS) + sexFac + region+ (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
 summary(lm.model)
+
+# spontaneous pc1
+
+ lunaize(ggplot(data = allmeasures_mrs %>% filter(measure == 'Induced'), aes(x = sqrt(GluGABAimbalanceABS), y = pc1)) +
+               geom_point(size = 3,alpha=1, color = "plum4") +
+          geom_line(aes(group= interaction(lunaID, region), color = "plum4"), alpha = 0.3, size = 2) +
+          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=3)) +  
+  xlab("Glu GABA Asymmetry") + ylab("Spontaneous PC1") + 
+         scale_color_manual(values=c("plum4")) +
+   theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
+        axis.title.y = element_text(vjust = 2), 
+        axis.title.x = element_text(vjust = -2), legend.position = "none")
+
+
+lm.model <-  lmer(sqrt(GluGABAimbalanceABS) ~ age + pc1 + sexFac + region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
+summary(lm.model)
+  
+#age interaction
+lm.model <-  lmer(pc1 ~ age*sqrt(GluGABAimbalanceABS) + sexFac + region+ (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
+summary(lm.model)
+
+
+
+
+```
+
+### Ratio
+```{r ratio, echo= FALSE, message = FALSE, warning = FALSE, fig.height=10, fig.width=18}
+
+# SNR pc1
+
+ lunaize(ggplot(data = allmeasures_mrs %>% filter(measure == 'SNR'), aes(x = sqrt(Ratio), y = pc1)) +
+            geom_point(size = 2,alpha=0.8, color = "#2E041F") +
+          geom_line(aes(group= interaction(lunaID, region), color = "#2E041F"), alpha = 0.2) +
+          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=2)) + 
+  xlab("Glu GABA Ratio") + ylab("SNR PC1") + 
+         scale_color_manual(values=c("#2E041F")) +
+   theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
+        axis.title.y = element_text(vjust = 2), 
+        axis.title.x = element_text(vjust = -2), legend.position = "none")
+
+
+lm.model <-  lmer(sqrt(Ratio) ~ age + pc1 + region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
+summary(lm.model)
+  
+#age interaction
+lm.model <-  lmer(pc1 ~ age*sqrt(Ratio) + region+ (1|lunaID), data = allmeasures_mrs %>% filter(measure == "SNR"))
+summary(lm.model)
+
+
+# spontaneous pc1
+
+ lunaize(ggplot(data = allmeasures_mrs %>% filter(measure == 'Induced'), aes(x = sqrt(Ratio), y = pc1)) +
+            geom_point(size = 2,alpha=0.8, color = "plum4") +
+          geom_line(aes(group= interaction(lunaID, region), color = "plum4"), alpha = 0.2) +
+          geom_smooth(aes(group = 1), method="lm", alpha = 0.4, color="black",size=2)) + 
+  xlab("Glu GABA Ratio") + ylab("Spontaneous PC1") + 
+         scale_color_manual(values=c("plum4")) +
+   theme(text = element_text(size = 40), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"), aspect.ratio = 1,
+        axis.title.y = element_text(vjust = 2), 
+        axis.title.x = element_text(vjust = -2), legend.position = "none")
+
+lm.model <-  lmer(sqrt(Ratio) ~ age + pc1 + region + (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
+summary(lm.model)
+  
+#age interaction
+lm.model <-  lmer(pc1 ~ age*sqrt(Ratio) + region+ (1|lunaID), data = allmeasures_mrs %>% filter(measure == "Induced"))
+summary(lm.model)
+
 
 ```
 
@@ -322,24 +499,24 @@ lunaize(ggplot(data = SNRbehavior %>%
         axis.title.x = element_text(vjust = -2), panel.spacing = unit(3, "lines"))
 
 ## vs SNR
-lm.model <-  lmer(pc1 ~ age+ absBestError + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
+lm.model <-  lmer(pc1 ~ age+ absBestError + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
 summary(lm.model)
 
-lm.model <-  lmer(pc1 ~ age*absBestError + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
+lm.model <-  lmer(pc1 ~ age*absBestError + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
 summary(lm.model)
 
 ## vs evoked
-lm.model <-  lmer(pc1 ~ age+ absBestError + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
+lm.model <-  lmer(pc1 ~ age+ absBestError + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
 summary(lm.model)
 
-lm.model <-  lmer(pc1 ~ age*absBestError + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
+lm.model <-  lmer(pc1 ~ age*absBestError + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
 summary(lm.model)
 
 ## vs spontaneous
-lm.model <-  lmer(pc1 ~ age+ absBestError + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
+lm.model <-  lmer(pc1 ~ age+ absBestError + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
 summary(lm.model)
 
-lm.model <-  lmer(pc1 ~ age*absBestError + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
+lm.model <-  lmer(pc1 ~ age*absBestError + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
 summary(lm.model)
 
 # accuracy var
@@ -354,24 +531,24 @@ lunaize(ggplot(data = SNRbehavior %>%
         axis.title.x = element_text(vjust = -2), panel.spacing = unit(3, "lines"))
 
 ## vs SNR
-lm.model <-  lmer(pc1 ~ age+ absBestError_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
+lm.model <-  lmer(pc1 ~ age+ absBestError_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
 summary(lm.model)
 
-lm.model <-  lmer(pc1 ~ age*absBestError_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
+lm.model <-  lmer(pc1 ~ age*absBestError_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
 summary(lm.model)
 
 ## vs evoked
-lm.model <-  lmer(pc1 ~ age+ absBestError_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
+lm.model <-  lmer(pc1 ~ age+ absBestError_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
 summary(lm.model)
 
-lm.model <-  lmer(pc1 ~ age*absBestError_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
+lm.model <-  lmer(pc1 ~ age*absBestError_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
 summary(lm.model)
 
 ## vs spontaneous
-lm.model <-  lmer(pc1 ~ age+ absBestError_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
+lm.model <-  lmer(pc1 ~ age+ absBestError_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
 summary(lm.model)
 
-lm.model <-  lmer(pc1 ~ age*absBestError_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
+lm.model <-  lmer(pc1 ~ age*absBestError_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
 summary(lm.model)
 
 
@@ -386,16 +563,16 @@ lunaize(ggplot(data = SNRbehavior %>%
 
 
 
-lm.model <-  lmer(pc1 ~ age+ mgsLatency_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
+lm.model <-  lmer(pc1 ~ age+ mgsLatency_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
 summary(lm.model)
 
-lm.model <-  lmer(mgsLatency_sd ~ age+ pc1 + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
+lm.model <-  lmer(mgsLatency_sd ~ age+ pc1 + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
 summary(lm.model)
 
 p.adjust(0.023, method = 'bonferroni', n=3)
 
 
-lm.model <-  lmer(pc1 ~ age*mgsLatency_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
+lm.model <-  lmer(pc1 ~ age*mgsLatency_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
 summary(lm.model)
 
 
@@ -411,10 +588,44 @@ lunaize(ggplot(data = SNRbehavior %>%
 
 
 
-lm.model <-  lmer(pc1 ~ age+ mgsLatency_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
+lm.model <-  lmer(pc1 ~ age+ mgsLatency_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
 summary(lm.model)
 
-lm.model <-  lmer(pc1 ~ age*mgsLatency_sd + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
+lm.model <-  lmer(pc1 ~ age*mgsLatency_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
+summary(lm.model)
+
+#spontaneous
+lm.model <-  lmer(pc1 ~ age+ mgsLatency_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
+summary(lm.model)
+
+lm.model <-  lmer(pc1 ~ age*mgsLatency_sd + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
+summary(lm.model)
+
+
+
+# mgs latency
+
+#evoked
+lm.model <-  lmer(pc1 ~ age+ mgsLatency + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
+summary(lm.model)
+
+lm.model <-  lmer(pc1 ~ age*mgsLatency + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Evoked'))
+summary(lm.model)
+
+
+#spontaneous
+lm.model <-  lmer(pc1 ~ age+ mgsLatency + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
+summary(lm.model)
+
+lm.model <-  lmer(pc1 ~ age*mgsLatency + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'Spontaneous'))
+summary(lm.model)
+
+
+#SNR
+lm.model <-  lmer(pc1 ~ age+ mgsLatency + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
+summary(lm.model)
+
+lm.model <-  lmer(pc1 ~ age*mgsLatency + sexFac + (1|lunaID), data = SNRbehavior %>% filter(measure == 'SNR'))
 summary(lm.model)
 
 
@@ -467,3 +678,8 @@ for (behavVar in behavVars) {
 }  
 
 ```
+
+
+
+
+
