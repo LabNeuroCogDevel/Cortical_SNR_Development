@@ -16,13 +16,13 @@ Beatriz Luna
 September 2023
 
 ### Current Project Status
-Manuscript under review at Progress in Neurobiology
+Published in Progress in Neurobiology (2024) as [Prefrontal Excitation/ Inhibition Balance Supports Adolescent Enhancements in Circuit Signal to Noise Ratio](https://www.sciencedirect.com/science/article/pii/S030100822400131X#ab0010)
 
 ### Datasets
 LNCD 7T
 
 ### Github Repository
-<https://github.com/LabNeuroCogDevel/7T_EEG/tree/main/Cortical_SNR_Development>
+<https://github.com/LabNeuroCogDevel/Cortical_SNR_Development>
 
 ## Code Documentation
 **Preprocessing:**
