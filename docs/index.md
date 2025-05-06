@@ -58,7 +58,7 @@ Preprocessing can be run using [01_Cortical_SNR_Preprocessing.sh](https://github
 
 **Calculate Total, Evoked, and Spontaneous Activity:**
 <br>
-Run the bash script [02_CreateIndividualSubjectFiles_EvokedSpontaneous.sh](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/Cortical_SNR_Development/02_CreateIndividualSubjectFiles_EvokedSpontaneous.sh)
+Run the bash script [02_CreateIndividualSubjectFiles_EvokedSpontaneous.sh](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/02_CreateIndividualSubjectFiles_EvokedSpontaneous.sh)
 
 ```matlab -nodesktop -r "addpath(genpath('code/')); totalEvokedSpontaneous('4')"```
 
@@ -79,7 +79,7 @@ Cortical signal-to-noise ratio (SNR) was computed by calculating the evoked (sti
  
 **Combine Individual Subject Files:**
 <br>
-[03_CombineSubDataframes.R](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/Cortical_SNR_Development/03_CombineSubDataframes.R)
+[03_CombineSubDataframes.R](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/03_CombineSubDataframes.R)
 
 ```
 #!/usr/bin/env Rscript
@@ -95,14 +95,14 @@ combineSubjectDataframes(20)
 
 **Combine All Stimulus Conditions:**
 <br>
-[04_combineAllStimConditions.R](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/Cortical_SNR_Development/04_combineAllStimConditions.R)
+[04_combineAllStimConditions.R](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/04_combineAllStimConditions.R)
 
 * Combines the csv files on the previous step into one large csv files with all frequency stimulus conditions
 * Preforms outlier detection (2 SDs above the mean)
 
 **Impute missing data and Calculate frontal region PCA:**
 <br>
-[05_createImputed_PCA_dataFrames.R](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/Cortical_SNR_Development/05_createImputed_PCA_dataFrames.R)
+[05_createImputed_PCA_dataFrames.R](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/05_createImputed_PCA_dataFrames.R)
 
 Prior work has shown that ASSR is maximal at the frontal central electrodes Fz and FCz and then disperses amongst the frontal central electrodes surrounding it. To account for this spatial signal spread, we performed a principle component analysis (PCA) to reduce the dimensionality of the data for each of the total, evoked, and spontaneous power, as well as SNR. Due to both prior work and our hypotheses regard prefrontal cortex plasticity, the PCA was restricted to frontal electrodes, that is, F3, F5, F7, F1, F2, F4, F6, F8, AFz, AF1, AF2, Fp1, Fp2, Fz, AF5, AF6 (per the 10-20 international system naming convention). In each case, the first principal component (PC) captured the bulk for the signal variance and was used for subsequent analyses. 
 
@@ -112,7 +112,7 @@ Due to missing data from outlier detection on each electrode, we imputed the mis
 
 **Figures and Statistics:**
 <br>
-[06_SNR_Results.Rmd](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/Cortical_SNR_Development/06_SNR_Results.Rmd)
+[06_SNR_Results.Rmd](https://github.com/LabNeuroCogDevel/Cortical_SNR_Development/blob/main/06_SNR_Results.Rmd)
 
 To assess developmental trajectories of cortical SNR activity, we implemented GAMMs on the first principal component, PC1, of evoked power, spontaneous power, and SNR, including random intercepts estimated for each participant. Regression splines were implemented (4 degrees of freedom) to assess linear and non-linear effects. Auditory measures that were found to significantly change across adolescence were then used to test for associations with our MRSI measures, glutamate (Glu), GABA, and Glu GABA Asymmetry using linear mixed effect models (lmer function, lme4 package in Rstudio). We first tested for significant main effects of the auditory measure on the MRSI parameter while controlling for age and hemisphere (left or right DLPFC). We additionally tested for auditory measure-by-age interactions while controlling for hemisphere. 	We then investigated whether our auditory measures had significant associations with our working memory measures (accuracy, accuracy trial variability, response latency, response latency variability) using linear mixed effect models (lmer function, lme4 package in Rstudio). 
 
